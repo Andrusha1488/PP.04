@@ -1,0 +1,158 @@
+﻿@* ============================================================
+   Methodist/Journal.cshtml — просмотр журнала методистом
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Просмотр журнала";
+    var jModel = Model as StudentDiaryWeb.Models.JournalViewModel;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">📓 Журнал (просмотр)</div>
+        <div class="page-subtitle">
+            @jModel?.Assignment.TeacherName &nbsp;·&nbsp;
+            @jModel?.Assignment.GroupName &nbsp;·&nbsp;
+            @jModel?.Assignment.SubjectName
+        </div>
+    </div>
+    <a href="/Methodist/Index" class="btn btn-secondary">← Назад</a>
+</div>
+
+@* Кнопка «Проверено» *@
+<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:16px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    @if (jModel?.LastReview != null)
+    {
+        <div style="font-size:13px;color:#16a34a;">
+            ✅ Последняя проверка: <strong>@jModel.LastReview.ReviewDate.ToString("dd.MM.yyyy")</strong>
+            — @jModel.LastReview.MethodistName
+            @if (!string.IsNullOrEmpty(jModel.LastReview.Note))
+            {
+                <span style="color:#6b7280;">"@jModel.LastReview.Note"</span>
+            }
+        </div>
+    }
+    <form method="post" action="/Methodist/MarkReviewed" style="display:flex;gap:8px;align-items:center;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="assignmentId" value="@jModel?.Assignment.AssignmentID">
+        <input type="text" name="note" placeholder="Заметка (необязательно)"
+               style="padding:7px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:220px;">
+        <button type="submit" class="btn btn-success btn-sm">✅ Отметить проверенным</button>
+    </form>
+</div>
+
+@* Таблица журнала (только чтение) *@
+@if (jModel?.Lessons.Any() == true)
+{
+    <div style="overflow-x:auto;margin-bottom:20px;">
+        <table style="background:white;border-radius:12px;border:1px solid #e5e7eb;min-width:500px;">
+            <thead>
+                <tr>
+                    <th style="position:sticky;left:0;background:#f9fafb;min-width:180px;z-index:2;">Студент</th>
+                    @foreach (var lesson in jModel.Lessons)
+                    {
+                        bool hasComment = jModel.Comments.ContainsKey(lesson.LessonID) && jModel.Comments[lesson.LessonID].Any();
+                        <th style="text-align:center;min-width:55px;padding:6px;@(hasComment ? "background:#fffbeb" : "")"
+                            title="@lesson.Topic">
+                            <div style="font-size:11px;">@lesson.LessonDate.ToString("dd.MM")</div>
+                            <div style="font-size:10px;color:#9ca3af;">@lesson.LessonType[..3].</div>
+                            @if (hasComment)
+                            {
+                                <div style="font-size:10px;">⚠</div>
+                            }
+                        </th>
+                    }
+                    <th style="text-align:center;">Ср.</th>
+                    <th style="text-align:center;">Пр.</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (jModel.Students != null)
+                {
+                    @foreach (var student in jModel.Students)
+                    {
+                        var avg = jModel.AverageGrades.GetValueOrDefault(student.StudentID);
+                        var absent = jModel.AbsenceCounts.GetValueOrDefault(student.StudentID);
+                        <tr>
+                            <td style="position:sticky;left:0;background:white;font-weight:500;border-right:1px solid #e5e7eb;">@student.FullName</td>
+                            @foreach (var lesson in jModel.Lessons)
+                            {
+                                var entry = jModel.Entries.ContainsKey(student.StudentID) &&
+                                jModel.Entries[student.StudentID].ContainsKey(lesson.LessonID)
+                                ? jModel.Entries[student.StudentID][lesson.LessonID] : null;
+                                string cv = entry?.DisplayCell ?? "";
+                                string bg = cv == "Н" ? "background:#fef2f2" : cv == "У" ? "background:#fffbeb" : cv == "5" ? "background:#f0fdf4" : cv == "2" ? "background:#fef2f2" : "";
+                                <td style="text-align:center;font-weight:600;font-size:13px;@bg">@cv</td>
+                            }
+                            <td style="text-align:center;font-weight:700;">@(avg.HasValue? avg.Value.ToString("0.0") : "—")</td>
+                            <td style="text-align:center;color:@(absent > 3 ? "#dc2626" : "#6b7280");">@(absent > 0 ? absent.ToString() : "—")</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @* Добавить замечание к занятию *@
+    <div class="table-card" style="margin-top:20px;">
+        <div class="table-header">
+            <div class="table-title">💬 Добавить замечание к занятию</div>
+        </div>
+        <div style="padding:16px 20px;">
+            <form method="post" action="/Methodist/AddComment" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="assignmentId" value="@jModel?.Assignment.AssignmentID">
+                <div style="flex:1;min-width:200px;">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px;">Занятие</label>
+                    <select name="lessonId" style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+                        @foreach (var l in jModel!.Lessons)
+                        {
+                            <option value="@l.LessonID">@l.LessonDate.ToString("dd.MM.yyyy") — @(l.Topic.Length > 30 ? l.Topic[..30] + "…" : l.Topic)</option>
+                        }
+                    </select>
+                </div>
+                <div style="flex:2;min-width:200px;">
+                    <label style="font-size:12px;color:#6b7280;display:block;margin-bottom:4px;">Замечание</label>
+                    <input type="text" name="commentText" placeholder="Введите замечание…" maxlength="500" required
+                           style="width:100%;padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+                </div>
+                <button type="submit" class="btn btn-warning">+ Добавить</button>
+            </form>
+        </div>
+
+        @* Список замечаний *@
+        @if (jModel!.Comments.Any())
+        {
+            <table style="margin-top:8px;">
+                <thead>
+                    <tr><th>Занятие</th><th>Замечание</th><th>Кто</th><th>Когда</th><th></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var kvp in jModel.Comments)
+                    {
+                        var lesson = jModel.Lessons.FirstOrDefault(l => l.LessonID == kvp.Key);
+                        @foreach (var c in kvp.Value)
+                        {
+                            <tr>
+                                <td>@lesson?.LessonDate.ToString("dd.MM.yyyy")</td>
+                                <td>@c.CommentText</td>
+                                <td>@c.MethodistName</td>
+                                <td style="color:#9ca3af;font-size:12px;">@c.CreatedAt.ToString("dd.MM HH:mm")</td>
+                                <td>
+                                    <form method="post" action="/Methodist/DeleteComment"
+                                          data-confirm="Удалить замечание?"
+                                          style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="commentId" value="@c.CommentID">
+                                        <input type="hidden" name="assignmentId" value="@jModel.Assignment.AssignmentID">
+                                        <button type="submit" class="btn btn-danger btn-sm">✕</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+}
+

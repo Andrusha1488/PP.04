@@ -1,0 +1,52 @@
+﻿@{
+    ViewData["Title"] = "Редактировать группу";
+    var m = Model as StudentDiaryWeb.Models.Group;
+    int gid = m?.GroupID ?? 0;
+    string gname = m?.GroupName ?? "";
+    int gcourse = m?.CourseYear ?? 1;
+    string gspec = m?.Specialty ?? "";
+}
+
+<div class="page-header">
+    <div class="page-title">👥 Редактировать группу</div>
+    <a href="/Admin/Groups" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/EditGroup">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="GroupID" value="@gid">
+
+        <div class="form-group">
+            <label>Название группы</label>
+            <input type="text" name="GroupName" value="@gname" maxlength="50" required>
+        </div>
+
+        <div class="form-group">
+            <label>Курс</label>
+            <select name="CourseYear">
+                @for (int i = 1; i <= 4; i++)
+                {
+                    if (gcourse == i)
+                    {
+                        <option value="@i" selected>@i курс</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i курс</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Специальность</label>
+            <input type="text" name="Specialty" value="@gspec" maxlength="200">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Admin/Groups" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

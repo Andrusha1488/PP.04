@@ -1,0 +1,80 @@
+﻿@* ============================================================
+   Teacher/CreateFinalGrades.cshtml
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Выставить итоговые оценки";
+    var assignment2 = ViewBag.Assignment as StudentDiaryWeb.Models.TeacherAssignment;
+    var gradeForms = ViewBag.GradeForms as List<string> ?? new();
+    var gradeValues2 = ViewBag.GradeValues as List<string> ?? new();
+    var rows = Model as List<StudentDiaryWeb.Models.FinalGrade> ?? new();
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">⭐ Итоговые оценки</div>
+        <div class="page-subtitle">@assignment2?.GroupName · @assignment2?.SubjectName</div>
+    </div>
+    <a href="/Teacher/FinalGrades?assignmentId=@assignment2?.AssignmentID" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card form-card-wide">
+    <form method="post" action="/Teacher/CreateFinalGrades?assignmentId=@assignment2?.AssignmentID">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group" style="max-width:260px;">
+            <label>Форма контроля</label>
+            <select name="gradeForm">
+                @foreach (var f in gradeForms)
+                {
+                    <option value="@f">@f</option>
+                }
+            </select>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+            <thead>
+                <tr>
+                    <th style="padding:8px;text-align:left;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Студент</th>
+                    <th style="padding:8px;text-align:center;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Ср. балл</th>
+                    <th style="padding:8px;text-align:center;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Итоговая оценка</th>
+                    <th style="padding:8px;text-align:left;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in rows)
+                {
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:8px;font-weight:500;">
+                            @row.StudentName
+                            <input type="hidden" name="studentIds" value="@row.StudentID">
+                        </td>
+                        <td style="padding:8px;text-align:center;color:#6b7280;">
+                            @(row.AverageGrade.HasValue? row.AverageGrade.Value.ToString("0.0") : "—")
+                        </td>
+                        <td style="padding:8px;text-align:center;">
+                            <select name="finalGrades"
+                                    style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-weight:600;">
+                                <option value="">—</option>
+                                @foreach (var g in gradeValues2)
+                                {
+                                    <option value="@g" selected="@(row.FinalGradeValue == g)">@g</option>
+                                }
+                            </select>
+                        </td>
+                        <td style="padding:8px;">
+                            <input type="text" name="comments" value="@row.Comment"
+                                   placeholder="—" maxlength="200"
+                                   style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success">💾 Сохранить</button>
+            <a href="/Teacher/FinalGrades?assignmentId=@assignment2?.AssignmentID" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+

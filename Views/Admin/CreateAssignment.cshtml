@@ -1,0 +1,76 @@
+﻿@* ============================================================
+   Admin/CreateAssignment.cshtml
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Новое назначение";
+    var teachers = ViewBag.Teachers as List<(int ID, string Name)> ?? new();
+    var subjects = ViewBag.Subjects as List<(int ID, string Name)> ?? new();
+    var groups = ViewBag.Groups as List<(int ID, string Name)> ?? new();
+    var semesters = ViewBag.Semesters as List<(int ID, string Name)> ?? new();
+}
+
+<div class="page-header">
+    <div class="page-title">🔗 Новое назначение</div>
+    <a href="/Admin/Assignments" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#1e40af;">
+    ℹ Назначение связывает преподавателя с предметом, группой и семестром.
+    После создания преподаватель увидит этот журнал в своём кабинете.
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/CreateAssignment">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>Преподаватель</label>
+            <select name="teacherID" required>
+                <option value="">— выберите преподавателя —</option>
+                @foreach (var t in teachers)
+                {
+                    <option value="@t.ID">@t.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Предмет (дисциплина)</label>
+            <select name="subjectID" required>
+                <option value="">— выберите предмет —</option>
+                @foreach (var s in subjects)
+                {
+                    <option value="@s.ID">@s.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Группа</label>
+            <select name="groupID" required>
+                <option value="">— выберите группу —</option>
+                @foreach (var g in groups)
+                {
+                    <option value="@g.ID">@g.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Семестр</label>
+            <select name="semesterID" required>
+                <option value="">— выберите семестр —</option>
+                @foreach (var sem in semesters)
+                {
+                    <option value="@sem.ID">@sem.Name</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Создать назначение</button>
+            <a href="/Admin/Assignments" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+

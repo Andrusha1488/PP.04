@@ -1,0 +1,60 @@
+﻿@{
+    ViewData["Title"] = "Редактировать семестр";
+    var m = Model as StudentDiaryWeb.Models.Semester;
+    int sid = m?.SemesterID ?? 0;
+    string sname = m?.SemesterName ?? "";
+    int syear = m?.AcademicYear ?? DateTime.Today.Year;
+    string startVal = m?.StartDate.ToString("yyyy-MM-dd") ?? "";
+    string endVal = m?.EndDate.ToString("yyyy-MM-dd") ?? "";
+    bool isCurrent = m?.IsCurrent ?? false;
+}
+
+<div class="page-header">
+    <div class="page-title">📅 Редактировать семестр</div>
+    <a href="/Admin/Semesters" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/EditSemester">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SemesterID" value="@sid">
+
+        <div class="form-group">
+            <label>Название</label>
+            <input type="text" name="SemesterName" value="@sname" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Учебный год (начало)</label>
+            <input type="number" name="AcademicYear" value="@syear" min="2020" max="2040" required>
+        </div>
+        <div class="form-group">
+            <label>Дата начала</label>
+            <input type="date" name="StartDate" value="@startVal" required>
+        </div>
+        <div class="form-group">
+            <label>Дата окончания</label>
+            <input type="date" name="EndDate" value="@endVal" required>
+        </div>
+        <div class="form-group">
+            <label>Статус</label>
+            <select name="IsCurrent">
+                @if (isCurrent)
+                {
+                    <option value="false">Архив</option>
+                    <option value="true" selected>Текущий</option>
+                }
+                else
+                {
+                    <option value="false" selected>Архив</option>
+                    <option value="true">Текущий</option>
+                }
+            </select>
+            <div class="form-hint">Только один семестр может быть текущим</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Admin/Semesters" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

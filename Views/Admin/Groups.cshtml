@@ -1,0 +1,90 @@
+﻿@* ============================================================
+   Admin/Groups.cshtml — фильтр по курсу
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Группы";
+    var list = Model as List<StudentDiaryWeb.Models.Group>
+                    ?? new List<StudentDiaryWeb.Models.Group>();
+    int filterCourse = ViewBag.FilterCourse != null ? (int)ViewBag.FilterCourse : 0;
+}
+
+<div class="page-header">
+    <div class="page-title">👥 Группы</div>
+    <a href="/Admin/CreateGroup" class="btn btn-primary">+ Новая группа</a>
+</div>
+
+<form method="get" action="/Admin/Groups"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Курс</div>
+        <select name="filterCourse"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="0">Все курсы</option>
+            @for (int i = 1; i <= 4; i++)
+            {
+                if (filterCourse == i)
+                {
+                    <option value="@i" selected>@i курс</option>
+                }
+                else
+                {
+                    <option value="@i">@i курс</option>
+                }
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (filterCourse > 0)
+    {
+        <a href="/Admin/Groups" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Показано: <strong>@list.Count</strong>
+    </div>
+</form>
+
+<div class="table-card">
+    <div class="table-header">
+        <div class="table-title">Всего: @list.Count</div>
+        <div class="search-box">
+            <input type="text" placeholder="Поиск…" data-search="groupsTable">
+        </div>
+    </div>
+    <table id="groupsTable">
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th style="text-align:center;">Курс</th>
+                <th>Специальность</th>
+                <th style="text-align:center;">Студентов</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var g in list)
+            {
+                <tr>
+                    <td><strong>@g.GroupName</strong></td>
+                    <td style="text-align:center;">@g.CourseYear</td>
+                    <td style="color:#6b7280;">@(string.IsNullOrEmpty(g.Specialty) ? "—" : g.Specialty)</td>
+                    <td style="text-align:center;">@(ViewData[$"count_{g.GroupID}"] ?? 0)</td>
+                    <td>
+                        <a href="/Admin/EditGroup?id=@g.GroupID" class="btn btn-secondary btn-sm">Изменить</a>
+                        <form method="post" action="/Admin/DeleteGroup"
+                              data-confirm="Удалить группу «@g.GroupName»?"
+                              style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@g.GroupID">
+                            <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!list.Any())
+            {
+                <tr><td colspan="5" style="text-align:center;padding:32px;color:#9ca3af;">Групп не найдено</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

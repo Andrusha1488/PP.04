@@ -1,0 +1,72 @@
+﻿@using StudentDiaryWeb.Controllers
+@model ProfileViewModel
+@{
+    ViewData["Title"] = "Мой профиль";
+}
+
+<div class="page-header">
+    <div class="page-title">👤 Мой профиль</div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:700px;">
+    <div class="form-card" style="max-width:100%;">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:16px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Данные аккаунта</div>
+
+        <div style="margin-bottom:14px;">
+            <div style="font-size:12px;color:#9ca3af;">Логин</div>
+            <div style="font-size:15px;font-weight:600;margin-top:3px;">@Model?.Login</div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <div style="font-size:12px;color:#9ca3af;">ФИО</div>
+            <div style="font-size:15px;font-weight:600;margin-top:3px;">
+                @(string.IsNullOrEmpty(Model?.FullName) ? "—" : Model.FullName)
+            </div>
+        </div>
+
+        <div style="margin-bottom:14px;">
+            <div style="font-size:12px;color:#9ca3af;">Роль</div>
+            <div style="margin-top:3px;">
+                @{
+                    string badgeClass = Model?.Role switch
+                    {
+                        "Администратор" => "badge-danger",
+                        "Методист" => "badge-warning",
+                        _ => "badge-info"
+                    };
+                }
+                <span class="badge @badgeClass">@Model?.Role</span>
+            </div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+            <div style="font-size:12px;color:#9ca3af;">Email</div>
+            <div style="font-size:15px;margin-top:3px;">
+                @if (string.IsNullOrEmpty(Model?.Email))
+                {
+                    <span style="color:#9ca3af;">Не указан</span>
+                    <span class="badge badge-warning" style="margin-left:6px;">2FA недоступна</span>
+                }
+                else
+                {
+                    <span>@Model.Email</span>
+                    <span class="badge badge-success" style="margin-left:6px;">2FA включена</span>
+                }
+            </div>
+        </div>
+
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <a href="/Profile/EditEmail" class="btn btn-secondary btn-sm">✉ Изменить email</a>
+            <a href="/Profile/ChangePassword" class="btn btn-secondary btn-sm">🔑 Сменить пароль</a>
+        </div>
+    </div>
+
+    <div class="form-card" style="max-width:100%;background:#f9fafb;">
+        <div style="font-size:13px;color:#6b7280;margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">Информация</div>
+        <div style="font-size:13px;color:#6b7280;line-height:1.6;">
+            <p>Если вы укажете email — при следующем входе будет запрошен код подтверждения (двухфакторная аутентификация).</p>
+            <br>
+            <p>Для смены ФИО обратитесь к администратору.</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,172 @@
+﻿@{
+    ViewData["Title"] = "Отчёт по успеваемости";
+    var report = Model as StudentDiaryWeb.Models.GroupProgressReport;
+    string filterStatus = ViewBag.FilterStatus ?? "";
+    string minAvg = ViewBag.MinAvg ?? "";
+    string maxAbsences = ViewBag.MaxAbsences ?? "";
+
+    var rows = report?.Rows ?? new List<StudentDiaryWeb.Models.StudentProgressRow>();
+
+    // Фильтрация
+    if (filterStatus == "debtor")
+        rows = rows.Where(r => r.IsDebtor).ToList();
+    else if (filterStatus == "excellent")
+        rows = rows.Where(r => r.AverageGrade.HasValue && r.AverageGrade >= 4.5m).ToList();
+    else if (filterStatus == "nogrades")
+        rows = rows.Where(r => !r.AverageGrade.HasValue).ToList();
+
+    if (!string.IsNullOrEmpty(minAvg) && decimal.TryParse(minAvg, out var minAvgVal))
+        rows = rows.Where(r => r.AverageGrade.HasValue && r.AverageGrade >= minAvgVal).ToList();
+
+    if (!string.IsNullOrEmpty(maxAbsences) && int.TryParse(maxAbsences, out var maxAbsVal))
+        rows = rows.Where(r => r.AbsenceCount >= maxAbsVal).ToList();
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">📊 Отчёт по успеваемости</div>
+        <div class="page-subtitle">
+            @report?.Assignment.GroupName · @report?.Assignment.SubjectName · @report?.Assignment.SemesterName
+        </div>
+    </div>
+    <a href="/Teacher/Journal?assignmentId=@report?.Assignment.AssignmentID" class="btn btn-secondary">← Журнал</a>
+</div>
+
+@* Сводная статистика *@
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">@report?.TotalLessons</div>
+        <div class="stat-label">Занятий проведено</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@report?.TotalHours</div>
+        <div class="stat-label">Часов проведено</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@report?.PlannedHours</div>
+        <div class="stat-label">Часов по плану</div>
+    </div>
+    <div class="stat-card" style="border-color:@(report?.Rows.Count(r => r.IsDebtor) > 0 ? "#fecaca" : "#e5e7eb")">
+        <div class="stat-number" style="color:@(report?.Rows.Count(r => r.IsDebtor) > 0 ? "#dc2626" : "#1e40af")">
+            @report?.Rows.Count(r => r.IsDebtor)
+        </div>
+        <div class="stat-label">Должников</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number" style="color:#16a34a;">@report?.Rows.Count(r => r.AverageGrade.HasValue && r.AverageGrade >= 4.5m)</div>
+        <div class="stat-label">Отличников</div>
+    </div>
+</div>
+
+@* Фильтры *@
+<form method="get" action="/Teacher/Report"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <input type="hidden" name="assignmentId" value="@report?.Assignment.AssignmentID">
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Категория</div>
+        <select name="filterStatus"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            @{
+                var statVals = new[] { "", "debtor", "excellent", "nogrades" };
+                var statLabels = new[] { "Все студенты", "Только должники", "Только отличники", "Без оценок" };
+            }
+            @for (int i = 0; i < statVals.Length; i++)
+            {
+                if (filterStatus == statVals[i])
+                {
+                    <option value="@statVals[i]" selected>@statLabels[i]</option>
+                }
+                else
+                {
+                    <option value="@statVals[i]">@statLabels[i]</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Ср. балл не ниже</div>
+        <input type="number" name="minAvg" value="@minAvg"
+               min="2" max="5" step="0.1" placeholder="н-р 3.5"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:100px;">
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Пропусков не менее</div>
+        <input type="number" name="maxAbsences" value="@maxAbsences"
+               min="0" placeholder="н-р 3"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:100px;">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (!string.IsNullOrEmpty(filterStatus) || !string.IsNullOrEmpty(minAvg) || !string.IsNullOrEmpty(maxAbsences))
+    {
+        <a href="/Teacher/Report?assignmentId=@report?.Assignment.AssignmentID" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Показано: <strong>@rows.Count</strong> из <strong>@(report?.Rows.Count ?? 0)</strong>
+    </div>
+</form>
+
+<div class="table-card">
+    <table>
+        <thead>
+            <tr>
+                <th>Студент</th>
+                <th style="text-align:center;">Оценок</th>
+                <th style="text-align:center;">Пропусков</th>
+                <th style="text-align:center;">Ср. балл</th>
+                <th style="text-align:center;">Статус</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var row in rows.OrderBy(r => r.StudentName))
+            {
+                string avgColor = row.AverageGrade.HasValue
+                ? (row.AverageGrade >= 4 ? "#16a34a" : row.AverageGrade >= 3 ? "#d97706" : "#dc2626")
+                : "#9ca3af";
+                <tr>
+                    <td>@row.StudentName</td>
+                    <td style="text-align:center;">@row.GradeCount</td>
+                    <td style="text-align:center;color:@(row.AbsenceCount > 3 ? "#dc2626" : "#374151");">
+                        @(row.AbsenceCount > 0 ? row.AbsenceCount.ToString() : "—")
+                    </td>
+                    <td style="text-align:center;font-weight:700;color:@avgColor;">
+                        @row.AverageDisplay
+                    </td>
+                    <td style="text-align:center;">
+                        @if (row.IsDebtor)
+                        {
+                            <span class="badge badge-danger">Должник</span>
+                        }
+                        else if (row.AverageGrade.HasValue && row.AverageGrade >= 4.5m)
+                        {
+
+                            <span class="badge badge-success">Отличник</span>
+                        }
+                        else if (!row.AverageGrade.HasValue)
+                        {
+
+                            <span class="badge badge-gray">Нет оценок</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge badge-info">Успевает</span>
+                        }
+                    </td>
+                </tr>
+            }
+            @if (!rows.Any())
+            {
+                <tr>
+                    <td colspan="5" style="text-align:center;padding:32px;color:#9ca3af;">
+                        По выбранным фильтрам ничего не найдено
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

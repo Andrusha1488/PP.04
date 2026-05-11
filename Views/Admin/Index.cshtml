@@ -1,0 +1,60 @@
+﻿@* ============================================================
+   Admin/Index.cshtml
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Администрирование";
+    var stats = Model as Dictionary<string, int> ?? new();
+}
+
+<div class="page-header">
+    <div class="page-title">🛠 Администрирование</div>
+</div>
+
+<div class="stats-grid">
+    @foreach (var s in stats)
+    {
+        <div class="stat-card">
+            <div class="stat-number">@s.Value</div>
+            <div class="stat-label">@s.Key</div>
+        </div>
+    }
+</div>
+
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;">
+    <a href="/Admin/Groups" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">👥</div>
+        <div style="font-weight:600;">Группы</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Управление учебными группами</div>
+    </a>
+    <a href="/Admin/Students" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">🎓</div>
+        <div style="font-weight:600;">Студенты</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Списки студентов по группам</div>
+    </a>
+    <a href="/Admin/Subjects" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">📚</div>
+        <div style="font-weight:600;">Предметы</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Дисциплины и часы</div>
+    </a>
+    <a href="/Admin/Semesters" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">📅</div>
+        <div style="font-weight:600;">Семестры</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Учебные периоды</div>
+    </a>
+    <a href="/Admin/Assignments" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">🔗</div>
+        <div style="font-weight:600;">Назначения</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Кто ведёт что в какой группе</div>
+    </a>
+    <a href="/Admin/Users" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">👤</div>
+        <div style="font-weight:600;">Пользователи</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">Управление доступом</div>
+    </a>
+    <a href="/Admin/AuditLog" class="stat-card" style="text-decoration:none;display:block;">
+        <div style="font-size:28px;margin-bottom:8px;">📋</div>
+        <div style="font-weight:600;">Журнал аудита</div>
+        <div style="font-size:12px;color:#6b7280;margin-top:4px;">История всех действий</div>
+    </a>
+</div>
+

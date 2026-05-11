@@ -1,0 +1,104 @@
+﻿@model StudentDiaryWeb.Models.Lesson
+@{
+    ViewData["Title"] = "Редактировать занятие";
+    var lessonTypes = ViewBag.LessonTypes as List<string> ?? new List<string>();
+    int lessonID = Model?.LessonID ?? 0;
+    int assignID = Model?.AssignmentID ?? 0;
+    string subjectName = Model?.SubjectName ?? "";
+    string groupName = Model?.GroupName ?? "";
+    string dateVal = Model?.LessonDate.ToString("yyyy-MM-dd") ?? "";
+    int lessonNum = Model?.LessonNumber ?? 1;
+    string topicVal = Model?.Topic ?? "";
+    string lessonType = Model?.LessonType ?? "";
+    int hoursCount = Model?.HoursCount ?? 2;
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">✏ Редактировать занятие</div>
+        <div class="page-subtitle">@subjectName · @groupName</div>
+    </div>
+    <a href="/Teacher/Lessons?assignmentId=@assignID" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Teacher/EditLesson">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="LessonID" value="@lessonID">
+        <input type="hidden" name="AssignmentID" value="@assignID">
+
+        <div class="form-group">
+            <label>Дата занятия</label>
+            <input type="date" name="LessonDate" value="@dateVal" required>
+        </div>
+
+        <div class="form-group">
+            <label>Номер пары</label>
+            <select name="LessonNumber">
+                @for (int i = 1; i <= 8; i++)
+                {
+                    if (lessonNum == i)
+                    {
+                        <option value="@i" selected>@i пара</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i пара</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Тема занятия</label>
+            <input type="text" name="Topic" value="@topicVal"
+                   placeholder="Введите тему…" maxlength="500">
+        </div>
+
+        <div class="form-group">
+            <label>Тип занятия</label>
+            <select name="LessonType">
+                @foreach (var t in lessonTypes)
+                {
+                    if (lessonType == t)
+                    {
+                        <option value="@t" selected>@t</option>
+                    }
+                    else
+                    {
+                        <option value="@t">@t</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Академических часов</label>
+            <select name="HoursCount">
+                @if (hoursCount == 1)
+                {
+                    <option value="1" selected>1 час</option>
+                    <option value="2">2 часа</option>
+                    <option value="4">4 часа</option>
+                }
+                else if (hoursCount == 4)
+                {
+                    <option value="1">1 час</option>
+                    <option value="2">2 часа</option>
+                    <option value="4" selected>4 часа</option>
+                }
+                else
+                {
+                    <option value="1">1 час</option>
+                    <option value="2" selected>2 часа</option>
+                    <option value="4">4 часа</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Teacher/Lessons?assignmentId=@assignID" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

@@ -1,0 +1,150 @@
+﻿@model StudentDiaryWeb.Models.TeacherDashboard
+@{
+    ViewData["Title"] = "Главная";
+    string filterSemester = ViewBag.FilterSemester ?? "";
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">Мои журналы</div>
+        <div class="page-subtitle">@User.FindFirst("FullName")?.Value</div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">@Model.AllAssignments.Count</div>
+        <div class="stat-label">Назначений</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.TotalLessonsThisSemester</div>
+        <div class="stat-label">Занятий в семестре</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.TotalGradesThisSemester</div>
+        <div class="stat-label">Оценок в семестре</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number">@Model.RecentReviews.Count</div>
+        <div class="stat-label">Проверок методиста</div>
+    </div>
+</div>
+
+@* Фильтр по семестру *@
+@{
+    var semGroups = Model.AllAssignments.GroupBy(a => a.SemesterName).ToList();
+    var semNames = semGroups.Select(g => g.Key).ToList();
+}
+@if (semGroups.Count > 1)
+{
+    <form method="get" action="/Teacher/Index"
+          style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+                     padding:12px 20px;margin-bottom:20px;display:flex;gap:10px;align-items:center;">
+        <span style="font-size:13px;color:#6b7280;">Семестр:</span>
+        <select name="filterSemester" onchange="this.form.submit()"
+                style="padding:7px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="">Все семестры</option>
+            @foreach (var sn in semNames)
+            {
+                if (filterSemester == sn)
+                {
+                    <option value="@sn" selected>@sn</option>
+                }
+                else
+                {
+                    <option value="@sn">@sn</option>
+                }
+            }
+        </select>
+        @if (!string.IsNullOrEmpty(filterSemester))
+        {
+            <a href="/Teacher/Index" class="btn btn-secondary btn-sm">✕</a>
+        }
+    </form>
+}
+
+@* Журналы сгруппированы по семестрам *@
+@foreach (var semGroup in Model.AllAssignments
+    .Where(a => string.IsNullOrEmpty(filterSemester) || a.SemesterName == filterSemester)
+    .GroupBy(a => a.SemesterName))
+{
+    <div class="table-card" style="margin-bottom:24px;">
+        <div class="table-header">
+            <div class="table-title">📅 @semGroup.Key</div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Группа</th>
+                    <th>Предмет</th>
+                    <th style="text-align:center;">Часов план</th>
+                    <th style="text-align:center;">Проведено</th>
+                    <th>Прогресс</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in semGroup)
+                {
+                    int pct = a.HoursTotal > 0
+                    ? (int)Math.Round(a.HoursConducted * 100.0 / a.HoursTotal) : 0;
+                    string barColor = pct >= 90 ? "#16a34a" : pct >= 60 ? "#2563eb" : pct >= 30 ? "#d97706" : "#dc2626";
+                    <tr>
+                        <td><strong>@a.GroupName</strong></td>
+                        <td>@a.SubjectName</td>
+                        <td style="text-align:center;">@a.HoursTotal</td>
+                        <td style="text-align:center;">@a.HoursConducted</td>
+                        <td style="min-width:120px;">
+                            <div style="background:#f3f4f6;border-radius:4px;height:8px;overflow:hidden;">
+                                <div style="width:@(Math.Min(pct, 100))%;background:@barColor;height:100%;border-radius:4px;"></div>
+                            </div>
+                            <span style="font-size:11px;color:#6b7280;">@pct%</span>
+                        </td>
+                        <td>
+                            <a href="/Teacher/Journal?assignmentId=@a.AssignmentID" class="btn btn-primary btn-sm">📓 Журнал</a>
+                            <a href="/Teacher/Lessons?assignmentId=@a.AssignmentID" class="btn btn-secondary btn-sm">📋 Занятия</a>
+                            <a href="/Teacher/FinalGrades?assignmentId=@a.AssignmentID" class="btn btn-secondary btn-sm">⭐ Итоговые</a>
+                            <a href="/Teacher/Report?assignmentId=@a.AssignmentID" class="btn btn-secondary btn-sm">📊 Отчёт</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@if (!Model.AllAssignments.Any())
+{
+    <div class="table-card">
+        <div style="padding:48px;text-align:center;color:#9ca3af;">
+            <div style="font-size:48px;margin-bottom:12px;">📓</div>
+            <div style="font-size:16px;font-weight:600;">Нет назначений</div>
+            <div style="font-size:13px;margin-top:6px;">Обратитесь к администратору</div>
+        </div>
+    </div>
+}
+
+@* Проверки методиста с фильтром *@
+@if (Model.RecentReviews.Any())
+{
+    <div class="table-card" style="margin-top:24px;">
+        <div class="table-header">
+            <div class="table-title">✅ Проверки методиста</div>
+        </div>
+        <table>
+            <thead>
+                <tr><th>Дата</th><th>Методист</th><th>Заметка</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var r in Model.RecentReviews)
+                {
+                    <tr>
+                        <td>@r.ReviewDate.ToString("dd.MM.yyyy HH:mm")</td>
+                        <td>@r.MethodistName</td>
+                        <td style="color:#6b7280;">@(string.IsNullOrEmpty(r.Note) ? "—" : r.Note)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

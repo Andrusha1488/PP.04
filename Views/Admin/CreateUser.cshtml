@@ -1,0 +1,85 @@
+﻿@{
+    ViewData["Title"] = "Новый пользователь";
+    var roles = ViewBag.Roles as List<(int ID, string Name)> ?? new List<(int, string)>();
+    string selRole = ViewBag.SelectedRole ?? "3";
+}
+
+<div class="page-header">
+    <div class="page-title">👤 Новый пользователь</div>
+    <a href="/Admin/Users" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <div class="alert alert-info" style="margin-bottom:20px;">
+        ℹ После создания пользователя назначьте ему роль. Если роль — Преподаватель или Методист, заполните ФИО.
+    </div>
+
+    <form method="post" action="/Admin/CreateUser">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>Логин</label>
+            <input type="text" name="Login"
+                   placeholder="Минимум 3 символа, латиница и цифры"
+                   maxlength="100" required>
+        </div>
+
+        <div class="form-group">
+            <label>Пароль</label>
+            <input type="password" name="Password"
+                   placeholder="Минимум 6 символов"
+                   maxlength="256" required>
+        </div>
+
+        <div class="form-group">
+            <label>Роль</label>
+            <select name="RoleID" id="roleSelect" onchange="toggleFio(this.value)">
+                @foreach (var r in roles)
+                {
+                    if (selRole == r.ID.ToString())
+                    {
+                        <option value="@r.ID" selected>@r.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@r.ID">@r.Name</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div id="fioBlock">
+            <div class="form-group">
+                <label>Фамилия</label>
+                <input type="text" name="LastName" placeholder="Иванов" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>Имя</label>
+                <input type="text" name="FirstName" placeholder="Иван" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>Отчество</label>
+                <input type="text" name="Patronymic" placeholder="Иванович" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>Email (для 2FA)</label>
+                <input type="email" name="Email" placeholder="example@mail.ru" maxlength="150">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Создать пользователя</button>
+            <a href="/Admin/Users" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleFio(roleId) {
+        // Показываем ФИО только для преподавателя (3) и методиста (2)
+        var block = document.getElementById('fioBlock');
+        block.style.display = (roleId == '2' || roleId == '3') ? 'block' : 'none';
+    }
+    // Инициализация при загрузке
+    toggleFio(document.getElementById('roleSelect').value);
+</script>

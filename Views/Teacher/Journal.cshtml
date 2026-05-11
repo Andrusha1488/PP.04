@@ -1,0 +1,275 @@
+﻿@model StudentDiaryWeb.Models.JournalViewModel
+@{
+    ViewData["Title"] = "Журнал";
+    string dateFrom = ViewBag.DateFrom ?? "";
+    string dateTo = ViewBag.DateTo ?? "";
+
+    var visibleLessons = Model.Lessons
+        .Where(l =>
+            (string.IsNullOrEmpty(dateFrom) || l.LessonDate >= DateTime.Parse(dateFrom == "" ? "2000-01-01" : dateFrom)) &&
+            (string.IsNullOrEmpty(dateTo) || l.LessonDate <= DateTime.Parse(dateTo == "" ? "2099-01-01" : dateTo)))
+        .ToList();
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">📓 Журнал</div>
+        <div class="page-subtitle">
+            @Model.Assignment.GroupName &nbsp;·&nbsp;
+            @Model.Assignment.SubjectName &nbsp;·&nbsp;
+            @Model.Assignment.SemesterName
+        </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <a href="/Teacher/CreateLesson?assignmentId=@Model.Assignment.AssignmentID" class="btn btn-primary">+ Добавить занятие</a>
+        <a href="/Teacher/FinalGrades?assignmentId=@Model.Assignment.AssignmentID" class="btn btn-secondary">⭐ Итоговые</a>
+        <a href="/Teacher/Report?assignmentId=@Model.Assignment.AssignmentID" class="btn btn-secondary">📊 Отчёт</a>
+        <a href="/Teacher/Index" class="btn btn-secondary">← Назад</a>
+    </div>
+</div>
+
+@* Прогресс часов *@
+@{
+    int pct = Model.Assignment.HoursTotal > 0
+        ? (int)Math.Round(Model.Assignment.HoursConducted * 100.0 / Model.Assignment.HoursTotal) : 0;
+    string barColor = pct >= 90 ? "#16a34a" : pct >= 60 ? "#2563eb" : pct >= 30 ? "#d97706" : "#dc2626";
+}
+<div style="background:white;border:1px solid #e5e7eb;border-radius:10px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+    <div style="font-size:13px;color:#6b7280;">
+        Часов: <strong>@Model.Assignment.HoursConducted</strong> из <strong>@Model.Assignment.HoursTotal</strong>
+    </div>
+    <div style="flex:1;min-width:100px;background:#f3f4f6;border-radius:4px;height:8px;">
+        <div style="width:@(Math.Min(pct, 100))%;background:@barColor;height:100%;border-radius:4px;"></div>
+    </div>
+    <div style="font-size:13px;font-weight:600;">@pct%</div>
+    @if (Model.LastReview != null)
+    {
+        <div style="font-size:12px;color:#16a34a;">
+            ✅ Проверено @Model.LastReview.ReviewDate.ToString("dd.MM.yyyy") — @Model.LastReview.MethodistName
+        </div>
+    }
+</div>
+
+@* Фильтр по датам занятий *@
+<form method="get" action="/Teacher/Journal"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <input type="hidden" name="assignmentId" value="@Model.Assignment.AssignmentID">
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Показать занятия с</div>
+        <input type="date" name="dateFrom" value="@dateFrom"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+    </div>
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">по</div>
+        <input type="date" name="dateTo" value="@dateTo"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+    </div>
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (!string.IsNullOrEmpty(dateFrom) || !string.IsNullOrEmpty(dateTo))
+    {
+        <a href="/Teacher/Journal?assignmentId=@Model.Assignment.AssignmentID" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Показано занятий: <strong>@visibleLessons.Count</strong> из <strong>@Model.Lessons.Count</strong>
+    </div>
+</form>
+
+@if (!Model.Lessons.Any())
+{
+    <div class="table-card">
+        <div style="padding:48px;text-align:center;color:#9ca3af;">
+            <div style="font-size:48px;margin-bottom:12px;">📋</div>
+            <div style="font-size:16px;font-weight:600;">Занятий пока нет</div>
+            <div style="margin-top:12px;">
+                <a href="/Teacher/CreateLesson?assignmentId=@Model.Assignment.AssignmentID" class="btn btn-primary">+ Добавить первое занятие</a>
+            </div>
+        </div>
+    </div>
+}
+else if (!visibleLessons.Any())
+{
+    <div class="table-card">
+        <div style="padding:48px;text-align:center;color:#9ca3af;">
+            <div style="font-size:48px;margin-bottom:12px;">🔍</div>
+            <div style="font-size:16px;font-weight:600;">По выбранному периоду занятий нет</div>
+        </div>
+    </div>
+}
+else
+{
+    <div style="overflow-x:auto;">
+        <table style="background:white;border-radius:12px;border:1px solid #e5e7eb;box-shadow:0 1px 4px rgba(0,0,0,0.04);min-width:600px;">
+            <thead>
+                <tr>
+                    <th style="position:sticky;left:0;background:#f9fafb;min-width:180px;z-index:2;">Студент</th>
+                    @foreach (var lesson in visibleLessons)
+                    {
+                        bool hasComment = Model.Comments.ContainsKey(lesson.LessonID) &&
+                        Model.Comments[lesson.LessonID].Any();
+                        <th style="text-align:center;min-width:60px;padding:6px;@(hasComment ? "background:#fffbeb" : "")"
+                            title="@lesson.Topic">
+                            <div style="font-size:11px;font-weight:600;">@lesson.LessonDate.ToString("dd.MM")</div>
+                            <div style="font-size:10px;color:#9ca3af;">
+                                @(lesson.Topic.Length > 10 ? lesson.Topic.Substring(0, 10) + "…" : lesson.Topic)
+                            </div>
+                            <div style="font-size:10px;color:#bfdbfe;">@lesson.LessonType.Substring(0, 3).</div>
+                        </th>
+                    }
+                    <th style="text-align:center;min-width:55px;">Ср.</th>
+                    <th style="text-align:center;min-width:55px;">Пр.</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var student in Model.Students)
+                {
+                    var avg = Model.AverageGrades.ContainsKey(student.StudentID) ? Model.AverageGrades[student.StudentID] : null;
+                    var absent = Model.AbsenceCounts.ContainsKey(student.StudentID) ? Model.AbsenceCounts[student.StudentID] : 0;
+                    <tr>
+                        <td style="position:sticky;left:0;background:white;font-weight:500;z-index:1;border-right:1px solid #e5e7eb;">
+                            @student.FullName
+                        </td>
+                        @foreach (var lesson in visibleLessons)
+                        {
+                            bool hasE = Model.Entries.ContainsKey(student.StudentID) &&
+                            Model.Entries[student.StudentID].ContainsKey(lesson.LessonID);
+                            var entry = hasE ? Model.Entries[student.StudentID][lesson.LessonID] : null;
+                            string cv = entry?.DisplayCell ?? "";
+                            string bg = cv == "Н" || cv == "н" ? "background:#fef2f2;"
+                            : cv == "У" || cv == "у" ? "background:#fffbeb;"
+                            : cv == "5" ? "background:#f0fdf4;"
+                            : cv == "4" ? "background:#eff6ff;"
+                            : cv == "3" ? "background:#fffbeb;"
+                            : cv == "2" ? "background:#fef2f2;" : "";
+                            <td style="text-align:center;padding:4px;@bg" title="@entry?.Comment">
+                                <span class="journal-cell"
+                                      data-lesson="@lesson.LessonID"
+                                      data-student="@student.StudentID"
+                                      style="display:inline-block;min-width:32px;padding:4px 6px;
+                                                         border-radius:4px;font-weight:600;font-size:13px;cursor:pointer;"
+                                      onclick="openCellEditor(this)">@cv</span>
+                            </td>
+                        }
+                        <td style="text-align:center;font-weight:700;color:@(avg.HasValue && avg < 3 ? "#dc2626" : "#111827");">
+                            @(avg.HasValue? avg.Value.ToString("0.0") : "—")
+                        </td>
+                        <td style="text-align:center;color:@(absent > 3 ? "#dc2626" : "#6b7280");">
+                            @(absent > 0 ? absent.ToString() : "—")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:#9ca3af;">Клик по ячейке — редактировать оценку / посещаемость</div>
+}
+
+@* Модальное окно *@
+<div id="cellModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:1000;align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:12px;padding:28px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+        <div style="font-size:16px;font-weight:700;margin-bottom:16px;">Редактировать запись</div>
+        <input type="hidden" id="cellLessonId">
+        <input type="hidden" id="cellStudentId">
+        <div class="form-group">
+            <label>Оценка</label>
+            <select id="cellGrade" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+                <option value="">— нет оценки —</option>
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+                <option value="2">2</option>
+                <option value="зач">зач</option>
+                <option value="незач">незач</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Посещаемость</label>
+            <select id="cellAttendance" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+                <option value="">Присутствовал</option>
+                <option value="н">Н — неуважительная</option>
+                <option value="у">У — уважительная</option>
+            </select>
+            <div class="form-hint">При выборе пропуска оценка не сохраняется</div>
+        </div>
+        <div class="form-group">
+            <label>Комментарий</label>
+            <input type="text" id="cellComment" placeholder="необязательно" maxlength="300"
+                   style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;">
+        </div>
+        <div style="display:flex;gap:10px;margin-top:8px;">
+            <button onclick="saveCell()" class="btn btn-primary" style="flex:1;">Сохранить</button>
+            <button onclick="closeModal()" class="btn btn-secondary">Отмена</button>
+        </div>
+        <div id="cellSaving" style="display:none;text-align:center;padding-top:8px;font-size:13px;color:#6b7280;">Сохранение…</div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var cellData = {};
+        @foreach (var student in Model.Students)
+        {
+                foreach (var lesson in Model.Lessons)
+                {
+                        bool hasE = Model.Entries.ContainsKey(student.StudentID) &&
+                                                Model.Entries[student.StudentID].ContainsKey(lesson.LessonID);
+                        var entry = hasE ? Model.Entries[student.StudentID][lesson.LessonID] : null;
+                        string g = entry?.Grade ?? "";
+                        string a = entry?.Attendance ?? "";
+                        string c = (entry?.Comment ?? "").Replace("\\", "\\\\").Replace("'", "\\'");
+                        string key = $"{lesson.LessonID}_{student.StudentID}";
+                        <text>cellData['@key'] = { grade:'@g', attendance:'@a', comment:'@c' };</text>
+                }
+        }
+
+        function openCellEditor(el) {
+            var lid = el.getAttribute('data-lesson');
+            var sid = el.getAttribute('data-student');
+            var d   = cellData[lid+'_'+sid] || {};
+            document.getElementById('cellLessonId').value   = lid;
+            document.getElementById('cellStudentId').value  = sid;
+            document.getElementById('cellGrade').value      = d.grade      || '';
+            document.getElementById('cellAttendance').value = d.attendance || '';
+            document.getElementById('cellComment').value    = d.comment    || '';
+            document.getElementById('cellModal').style.display = 'flex';
+        }
+        function closeModal() { document.getElementById('cellModal').style.display = 'none'; }
+
+        async function saveCell() {
+            var lid = document.getElementById('cellLessonId').value;
+            var sid = document.getElementById('cellStudentId').value;
+            var g   = document.getElementById('cellGrade').value;
+            var a   = document.getElementById('cellAttendance').value;
+            var c   = document.getElementById('cellComment').value;
+            document.getElementById('cellSaving').style.display = 'block';
+            var token = document.querySelector('#csrfForm input[name="__RequestVerificationToken"]').value;
+            var resp = await fetch('/Teacher/SaveEntry', {
+                method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+                body:'lessonId='+lid+'&studentId='+sid+'&grade='+encodeURIComponent(g)+
+                     '&attendance='+encodeURIComponent(a)+'&comment='+encodeURIComponent(c)+
+                     '&__RequestVerificationToken='+encodeURIComponent(token)
+            });
+            var result = await resp.json();
+            document.getElementById('cellSaving').style.display = 'none';
+            if (result.success) {
+                var cell = document.querySelector('.journal-cell[data-lesson="'+lid+'"][data-student="'+sid+'"]');
+                var key  = lid+'_'+sid;
+                var display='', bg='';
+                if      (a==='н'){display='Н';bg='background:#fef2f2;';}
+                else if (a==='у'){display='У';bg='background:#fffbeb;';}
+                else if (g==='5'){display='5';bg='background:#f0fdf4;';}
+                else if (g==='4'){display='4';bg='background:#eff6ff;';}
+                else if (g==='3'){display='3';bg='background:#fffbeb;';}
+                else if (g==='2'){display='2';bg='background:#fef2f2;';}
+                else if (g)      {display=g;}
+                cell.textContent = display;
+                cell.parentElement.setAttribute('style','text-align:center;padding:4px;'+bg);
+                cellData[key] = {grade:g, attendance:a, comment:c};
+                closeModal();
+            } else { alert('Ошибка: '+(result.message||'неизвестная')); }
+        }
+        document.getElementById('cellModal').addEventListener('click',function(e){if(e.target===this)closeModal();});
+    </script>
+    <form id="csrfForm" style="display:none;">@Html.AntiForgeryToken()</form>
+}

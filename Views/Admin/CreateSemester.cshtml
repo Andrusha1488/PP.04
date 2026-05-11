@@ -1,0 +1,42 @@
+﻿@{
+    ViewData["Title"] = "Новый семестр";
+}
+
+<div class="page-header">
+    <div class="page-title">📅 Новый семестр</div>
+    <a href="/Admin/Semesters" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/CreateSemester">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>Название</label>
+            <input type="text" name="SemesterName"
+                   placeholder="Например: 2024/2025 — Осенний"
+                   maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Учебный год (начало)</label>
+            <input type="number" name="AcademicYear"
+                   value="@DateTime.Today.Year"
+                   min="2020" max="2040" required>
+        </div>
+        <div class="form-group">
+            <label>Дата начала</label>
+            <input type="date" name="StartDate"
+                   value="@DateTime.Today.ToString("yyyy-MM-dd")" required>
+        </div>
+        <div class="form-group">
+            <label>Дата окончания</label>
+            <input type="date" name="EndDate"
+                   value="@DateTime.Today.AddMonths(4).ToString("yyyy-MM-dd")" required>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Создать</button>
+            <a href="/Admin/Semesters" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

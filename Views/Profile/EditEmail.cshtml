@@ -1,0 +1,36 @@
+﻿@{
+    ViewData["Title"] = "Изменить email";
+    string currentEmail = ViewBag.CurrentEmail ?? "";
+}
+
+<div class="page-header">
+    <div class="page-title">✉ Изменить email</div>
+    <a href="/Profile/Index" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    @if (!string.IsNullOrEmpty(currentEmail))
+    {
+        <div style="margin-bottom:20px;padding:12px 16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:13px;color:#166534;">
+            Текущий email: <strong>@currentEmail</strong>
+        </div>
+    }
+
+    <form method="post" action="/Profile/EditEmail">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>Новый email</label>
+            <input type="email" name="Email"
+                   value="@currentEmail"
+                   placeholder="example@technikum.ru"
+                   maxlength="200" required>
+            <div class="form-hint">После сохранения при входе будет запрашиваться код подтверждения</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Profile/Index" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

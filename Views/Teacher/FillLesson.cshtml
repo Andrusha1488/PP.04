@@ -1,0 +1,101 @@
+﻿@* ============================================================
+   Teacher/FillLesson.cshtml — заполнение оценок за занятие
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Заполнить журнал";
+    var lesson = ViewBag.Lesson as StudentDiaryWeb.Models.Lesson;
+    var students = ViewBag.Students as List<StudentDiaryWeb.Models.Student> ?? new();
+    var entries = ViewBag.Entries as Dictionary<int, StudentDiaryWeb.Models.JournalEntry> ?? new();
+    var grades = ViewBag.Grades as List<string> ?? new();
+}
+
+<div class="page-header">
+    <div>
+        <div class="page-title">✏ Заполнить журнал</div>
+        <div class="page-subtitle">
+            @lesson?.LessonDate.ToString("dd.MM.yyyy") &nbsp;·&nbsp;
+            @lesson?.LessonType &nbsp;·&nbsp;
+            @(string.IsNullOrEmpty(lesson?.Topic) ? "Тема не указана" : lesson.Topic)
+        </div>
+    </div>
+    <a href="/Teacher/Journal?assignmentId=@lesson?.AssignmentID" class="btn btn-secondary">← Журнал</a>
+</div>
+
+<div class="form-card form-card-wide">
+    <form method="post" action="/Teacher/FillLesson?lessonId=@lesson?.LessonID">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="lessonId" value="@lesson?.LessonID">
+
+        <table style="width:100%;border-collapse:collapse;margin-bottom:20px;">
+            <thead>
+                <tr>
+                    <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">#</th>
+                    <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Студент</th>
+                    <th style="text-align:center;padding:10px 8px;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Посещаемость</th>
+                    <th style="text-align:center;padding:10px 8px;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Оценка</th>
+                    <th style="text-align:left;padding:10px 8px;font-size:12px;color:#6b7280;border-bottom:2px solid #e5e7eb;">Комментарий</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (s, i) in students.Select((s, i) => (s, i + 1)))
+                {
+                    var entry = entries.ContainsKey(s.StudentID) ? entries[s.StudentID] : null;
+                    <tr style="border-bottom:1px solid #f3f4f6;">
+                        <td style="padding:8px;color:#9ca3af;font-size:13px;">@i</td>
+                        <td style="padding:8px;font-weight:500;">
+                            @s.FullName
+                            <input type="hidden" name="studentIds" value="@s.StudentID">
+                        </td>
+                        <td style="padding:8px;text-align:center;">
+                            <select name="attendances"
+                                    style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"
+                                    onchange="toggleGrade(this)">
+                                <option value="" selected="@(entry?.Attendance == null)">Присутствовал</option>
+                                <option value="н" selected="@(entry?.Attendance == "н")">Н — неуваж.</option>
+                                <option value="у" selected="@(entry?.Attendance == "у")">У — уваж.</option>
+                            </select>
+                        </td>
+                        <td style="padding:8px;text-align:center;">
+                            <select name="grades"
+                                    style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"
+                                    @(entry?.Attendance != null ? "disabled" : "")>
+                                <option value="">—</option>
+                                @foreach (var g in grades)
+                                {
+                                    <option value="@g" selected="@(entry?.Grade == g)">@g</option>
+                                }
+                            </select>
+                        </td>
+                        <td style="padding:8px;">
+                            <input type="text" name="comments"
+                                   value="@(entry?.Comment ?? "")"
+                                   placeholder="—"
+                                   maxlength="200"
+                                   style="width:100%;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <button type="submit" class="btn btn-success">💾 Сохранить журнал</button>
+            <a href="/Teacher/Journal?assignmentId=@lesson?.AssignmentID" class="btn btn-secondary">Отмена</a>
+            <span style="font-size:12px;color:#9ca3af;">Все изменения записываются в журнал аудита</span>
+        </div>
+    </form>
+</div>
+
+<script>
+    function toggleGrade(select) {
+        const row       = select.closest('tr');
+        const gradesSel = row.querySelector('select[name="grades"]');
+        if (!gradesSel) return;
+        if (select.value !== '') {
+            gradesSel.value    = '';
+            gradesSel.disabled = true;
+        } else {
+            gradesSel.disabled = false;
+        }
+    }
+</script>

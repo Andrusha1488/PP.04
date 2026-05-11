@@ -1,0 +1,144 @@
+﻿@{
+    ViewData["Title"] = "Журнал аудита";
+    var list = Model as List<StudentDiaryWeb.Models.AuditLog>
+                     ?? new List<StudentDiaryWeb.Models.AuditLog>();
+    int page = ViewBag.Page != null ? (int)ViewBag.Page : 1;
+    int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+    string search = ViewBag.Search ?? "";
+    string dateFrom = ViewBag.DateFrom ?? "";
+    string dateTo = ViewBag.DateTo ?? "";
+    string action = ViewBag.ActionFilter ?? "";
+}
+
+<div class="page-header">
+    <div class="page-title">📋 Журнал аудита</div>
+</div>
+
+@* ── Панель фильтров ── *@
+<form method="get" action="/Admin/AuditLog"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Поиск (логин / детали)</div>
+        <input type="text" name="search" value="@search"
+               placeholder="Логин или текст…"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;width:180px;">
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Действие</div>
+        <select name="action"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            @{
+                var actions = new[] { "", "Вход", "Выход", "Создание", "Изменение",
+                        "Удаление", "Заполнение журнала", "Изменение ячейки",
+                        "Итоговые оценки", "Блокировка", "Смена роли",
+                        "Проверка журнала", "Замечание" };
+            }
+            @foreach (var a2 in actions)
+            {
+                string label = string.IsNullOrEmpty(a2) ? "Все действия" : a2;
+                if (action == a2)
+                {
+                    <option value="@a2" selected>@label</option>
+                }
+                else
+                {
+                    <option value="@a2">@label</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Дата с</div>
+        <input type="date" name="dateFrom" value="@dateFrom"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Дата по</div>
+        <input type="date" name="dateTo" value="@dateTo"
+               style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (!string.IsNullOrEmpty(search) || !string.IsNullOrEmpty(action) ||
+        !string.IsNullOrEmpty(dateFrom) || !string.IsNullOrEmpty(dateTo))
+    {
+        <a href="/Admin/AuditLog" class="btn btn-secondary">✕ Сбросить</a>
+    }
+</form>
+
+<div class="table-card">
+    <table>
+        <thead>
+            <tr>
+                <th>Дата / время</th>
+                <th>Пользователь</th>
+                <th>Действие</th>
+                <th>Таблица</th>
+                <th>Детали</th>
+                <th>IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var l in list)
+            {
+                string badgeClass = l.Action.Contains("Удал") ? "badge-danger"
+                : l.Action.Contains("Создан") ? "badge-success"
+                : l.Action.Contains("Вход") ? "badge-info"
+                : l.Action.Contains("Блок") ? "badge-warning"
+                : "badge-gray";
+                <tr>
+                    <td style="white-space:nowrap;font-size:12px;color:#6b7280;">
+                        @l.CreatedAt.ToString("dd.MM.yyyy HH:mm:ss")
+                    </td>
+                    <td><strong>@l.UserLogin</strong></td>
+                    <td><span class="badge @badgeClass">@l.Action</span></td>
+                    <td style="color:#6b7280;font-size:12px;">@l.TableName</td>
+                    <td style="font-size:12px;max-width:320px;overflow:hidden;
+                                   text-overflow:ellipsis;white-space:nowrap;"
+                        title="@l.Details">
+                        @l.Details
+                    </td>
+                    <td style="color:#9ca3af;font-size:12px;">@l.IPAddress</td>
+                </tr>
+            }
+            @if (!list.Any())
+            {
+                <tr>
+                    <td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">
+                        Записей не найдено
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@* Пагинация *@
+@if (totalPages > 1)
+{
+    <div style="display:flex;gap:6px;margin-top:16px;justify-content:center;flex-wrap:wrap;">
+        @if (page > 1)
+        {
+            <a href="/Admin/AuditLog?page=@(page - 1)&search=@search&action=@action&dateFrom=@dateFrom&dateTo=@dateTo"
+               class="btn btn-secondary btn-sm">← Пред.</a>
+        }
+        @for (int p = Math.Max(1, page - 3); p <= Math.Min(totalPages, page + 3); p++)
+        {
+            string active = p == page
+            ? "background:#2563eb;color:white;border-color:#2563eb;" : "";
+            <a href="/Admin/AuditLog?page=@p&search=@search&action=@action&dateFrom=@dateFrom&dateTo=@dateTo"
+               style="padding:6px 12px;border-radius:6px;font-size:13px;text-decoration:none;
+                              border:1px solid #d1d5db;@active">@p</a>
+        }
+        @if (page < totalPages)
+        {
+            <a href="/Admin/AuditLog?page=@(page + 1)&search=@search&action=@action&dateFrom=@dateFrom&dateTo=@dateTo"
+               class="btn btn-secondary btn-sm">След. →</a>
+        }
+    </div>
+}

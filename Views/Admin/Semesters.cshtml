@@ -1,0 +1,130 @@
+﻿@* ============================================================
+   Admin/Semesters.cshtml — фильтр по учебному году и статусу
+   ============================================================ *@
+@{
+    ViewData["Title"] = "Семестры";
+    var allList = Model as List<StudentDiaryWeb.Models.Semester>
+                      ?? new List<StudentDiaryWeb.Models.Semester>();
+    string filterStatus = ViewBag.FilterStatus ?? "";
+    int filterYear = ViewBag.FilterYear != null ? (int)ViewBag.FilterYear : 0;
+
+    var list = allList
+        .Where(s => filterStatus == "current" ? s.IsCurrent :
+                    filterStatus == "archive" ? !s.IsCurrent : true)
+        .Where(s => filterYear == 0 || s.AcademicYear == filterYear)
+        .ToList();
+
+    var years = allList.Select(s => s.AcademicYear).Distinct().OrderByDescending(y => y).ToList();
+}
+
+<div class="page-header">
+    <div class="page-title">📅 Семестры</div>
+    <a href="/Admin/CreateSemester" class="btn btn-primary">+ Новый семестр</a>
+</div>
+
+<form method="get" action="/Admin/Semesters"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Статус</div>
+        <select name="filterStatus"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            @{
+                var stVals = new[] { "", "current", "archive" };
+                var stLabels = new[] { "Все", "Текущий", "Архив" };
+            }
+            @for (int i = 0; i < stVals.Length; i++)
+            {
+                if (filterStatus == stVals[i])
+                {
+                    <option value="@stVals[i]" selected>@stLabels[i]</option>
+                }
+                else
+                {
+                    <option value="@stVals[i]">@stLabels[i]</option>
+                }
+            }
+        </select>
+    </div>
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Учебный год</div>
+        <select name="filterYear"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="0">Все годы</option>
+            @foreach (var y in years)
+            {
+                string label = $"{y}/{y + 1}";
+                if (filterYear == y)
+                {
+                    <option value="@y" selected>@label</option>
+                }
+                else
+                {
+                    <option value="@y">@label</option>
+                }
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (!string.IsNullOrEmpty(filterStatus) || filterYear > 0)
+    {
+        <a href="/Admin/Semesters" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Показано: <strong>@list.Count</strong> из <strong>@allList.Count</strong>
+    </div>
+</form>
+
+<div class="table-card">
+    <table>
+        <thead>
+            <tr>
+                <th>Название</th>
+                <th style="text-align:center;">Учебный год</th>
+                <th>Начало</th>
+                <th>Конец</th>
+                <th style="text-align:center;">Статус</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var s in list)
+            {
+                <tr>
+                    <td><strong>@s.SemesterName</strong></td>
+                    <td style="text-align:center;">@s.AcademicYear/@(s.AcademicYear + 1)</td>
+                    <td>@s.StartDate.ToString("dd.MM.yyyy")</td>
+                    <td>@s.EndDate.ToString("dd.MM.yyyy")</td>
+                    <td style="text-align:center;">
+                        @if (s.IsCurrent)
+                        {
+                            <span class="badge badge-success">✓ Текущий</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge badge-gray">Архив</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!s.IsCurrent)
+                        {
+                            <form method="post" action="/Admin/SetCurrentSemester"
+                                  data-confirm="Сделать «@s.SemesterName» текущим?"
+                                  style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@s.SemesterID">
+                                <button type="submit" class="btn btn-success btn-sm">Сделать текущим</button>
+                            </form>
+                        }
+                        <a href="/Admin/EditSemester?id=@s.SemesterID" class="btn btn-secondary btn-sm">Изменить</a>
+                    </td>
+                </tr>
+            }
+            @if (!list.Any())
+            {
+                <tr><td colspan="6" style="text-align:center;padding:32px;color:#9ca3af;">Семестров не найдено</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

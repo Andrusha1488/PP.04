@@ -1,0 +1,652 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — Электронный журнал</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f4f8;
+            color: #111827;
+            min-height: 100vh;
+        }
+
+        /* ── Шапка ── */
+        .topbar {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            color: white;
+            padding: 0 24px;
+            height: 58px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+        }
+
+        .topbar-brand {
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+            .topbar-brand::before {
+                content: '📓';
+                font-size: 20px;
+            }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .topbar-user {
+            color: #bfdbfe;
+            font-size: 13px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+
+        .btn-logout {
+            background: rgba(239,68,68,0.85);
+            color: white;
+            border: none;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+
+            .btn-logout:hover {
+                background: #dc2626;
+            }
+
+        /* ── Боковое меню ── */
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 58px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            padding: 12px 0 24px;
+            flex-shrink: 0;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        }
+
+        .sidebar-section {
+            font-size: 10px;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 16px 18px 6px;
+        }
+
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            font-size: 13.5px;
+            color: #4b5563;
+            text-decoration: none;
+            border-left: 3px solid transparent;
+            transition: all 0.15s;
+            margin: 1px 0;
+        }
+
+            .sidebar a:hover {
+                background: #f9fafb;
+                color: #111827;
+                border-left-color: #d1d5db;
+            }
+
+            .sidebar a.active {
+                border-left-color: #2563eb;
+                background: #eff6ff;
+                color: #1d4ed8;
+                font-weight: 600;
+            }
+
+        /* ── Основной контент ── */
+        .main {
+            flex: 1;
+            padding: 28px;
+            overflow-x: auto;
+            min-width: 0;
+        }
+
+        /* ── Уведомления ── */
+        .alert {
+            padding: 13px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .alert-success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+        }
+
+            .alert-success::before {
+                content: '✓';
+            }
+
+        .alert-error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+            .alert-error::before {
+                content: '✕';
+            }
+
+        .alert-info {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1e40af;
+        }
+
+            .alert-info::before {
+                content: 'ℹ';
+            }
+
+        .alert-warning {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            color: #92400e;
+        }
+
+            .alert-warning::before {
+                content: '⚠';
+            }
+
+        /* ── Карточки статистики ── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+
+            .stat-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: 700;
+            color: #1e40af;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 6px;
+        }
+
+        /* ── Таблицы ── */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        .table-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: #fafafa;
+        }
+
+        .table-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f9fafb;
+            padding: 11px 14px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 12px 14px;
+            font-size: 13.5px;
+            border-bottom: 1px solid #f3f4f6;
+            color: #374151;
+        }
+
+        tbody tr:hover {
+            background: #f9fafb;
+        }
+
+        tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* ── Кнопки ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13.5px;
+            font-weight: 500;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: #2563eb;
+            color: white;
+        }
+
+            .btn-primary:hover {
+                background: #1d4ed8;
+            }
+
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+
+            .btn-success:hover {
+                background: #15803d;
+            }
+
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+            .btn-danger:hover {
+                background: #b91c1c;
+            }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #e5e7eb;
+        }
+
+            .btn-secondary:hover {
+                background: #e5e7eb;
+            }
+
+        .btn-warning {
+            background: #d97706;
+            color: white;
+        }
+
+            .btn-warning:hover {
+                background: #b45309;
+            }
+
+        .btn-sm {
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+
+        /* ── Формы ── */
+        .form-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            padding: 28px;
+            max-width: 560px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        }
+
+        .form-card-wide {
+            max-width: 860px;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+            .form-group label {
+                display: block;
+                font-size: 13px;
+                font-weight: 600;
+                color: #374151;
+                margin-bottom: 6px;
+            }
+
+            .form-group input,
+            .form-group select,
+            .form-group textarea {
+                width: 100%;
+                padding: 9px 12px;
+                border: 1px solid #d1d5db;
+                border-radius: 8px;
+                font-size: 14px;
+                color: #111827;
+                background: white;
+                transition: border 0.15s, box-shadow 0.15s;
+            }
+
+                .form-group input:focus,
+                .form-group select:focus,
+                .form-group textarea:focus {
+                    border-color: #2563eb;
+                    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+                    outline: none;
+                }
+
+            .form-group textarea {
+                resize: vertical;
+                min-height: 80px;
+            }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 4px;
+        }
+
+        /* ── Бейджи ── */
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-danger {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-gray {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        /* ── Заголовок страницы ── */
+        .page-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: #6b7280;
+            margin-top: 3px;
+        }
+
+        /* ── Поиск ── */
+        .search-box input {
+            padding: 8px 12px 8px 34px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 13px;
+            width: 220px;
+            background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398l3.85 3.85a1 1 0 0 0 1.415-1.415l-3.868-3.833zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z'/%3E%3C/svg%3E") no-repeat 10px center;
+            transition: width 0.2s;
+        }
+
+            .search-box input:focus {
+                width: 280px;
+                outline: none;
+                border-color: #2563eb;
+            }
+
+        /* ── Адаптация ── */
+        @@media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .topbar {
+                padding: 0 16px;
+            }
+
+            .topbar-user {
+                display: none;
+            }
+
+            th, td {
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+        }
+
+        /* ── Анимация ── */
+        @@keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .main > * {
+            animation: fadeIn 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="topbar">
+        <a href="/Home" class="topbar-brand">Электронный журнал</a>
+        <div class="topbar-right">
+            <span class="topbar-user">
+                @User.FindFirst("FullName")?.Value &nbsp;·&nbsp;
+                @User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value
+            </span>
+            <a href="/Account/Logout" class="btn-logout">Выйти</a>
+        </div>
+    </header>
+
+    <div class="layout">
+        <nav class="sidebar">
+            @{
+                string role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "";
+                string path = Context.Request.Path;
+            }
+
+            @if (role == "Преподаватель")
+            {
+                <div class="sidebar-section">Журнал</div>
+                <a href="/Teacher/Index" class="@(path == "/Teacher/Index" || path == "/" ? "active" : "")">🏠 Главная</a>
+                <div class="sidebar-section">Аккаунт</div>
+                <a href="/Profile/Index" class="@(path.Contains("/Profile") ? "active" : "")">👤 Мой профиль</a>
+                <a href="/Profile/ChangePassword" class="@(path.Contains("ChangePassword") ? "active" : "")">🔑 Сменить пароль</a>
+            }
+            else if (role == "Методист")
+            {
+                <div class="sidebar-section">Контроль</div>
+                <a href="/Methodist/Index" class="@(path == "/Methodist/Index" ? "active" : "")">🏠 Главная</a>
+                <a href="/Methodist/Report" class="@(path.Contains("/Methodist/Report") ? "active" : "")">📊 Сводный отчёт</a>
+                <div class="sidebar-section">Аккаунт</div>
+                <a href="/Profile/Index" class="@(path.Contains("/Profile") ? "active" : "")">👤 Мой профиль</a>
+                <a href="/Profile/ChangePassword" class="@(path.Contains("ChangePassword") ? "active" : "")">🔑 Сменить пароль</a>
+            }
+            else if (role == "Администратор")
+            {
+                <div class="sidebar-section">Справочники</div>
+                <a href="/Admin/Index" class="@(path == "/Admin/Index" || path == "/Admin" ? "active" : "")">🏠 Главная</a>
+                <a href="/Admin/Groups" class="@(path.Contains("/Admin/Group") ? "active" : "")">👥 Группы</a>
+                <a href="/Admin/Students" class="@(path.Contains("/Admin/Student") ? "active" : "")">🎓 Студенты</a>
+                <a href="/Admin/Subjects" class="@(path.Contains("/Admin/Subject") ? "active" : "")">📚 Предметы</a>
+                <a href="/Admin/Semesters" class="@(path.Contains("/Admin/Semester") ? "active" : "")">📅 Семестры</a>
+                <a href="/Admin/Assignments" class="@(path.Contains("/Admin/Assignment") ? "active" : "")">🔗 Назначения</a>
+                <div class="sidebar-section">Пользователи</div>
+                <a href="/Admin/Users" class="@(path.Contains("/Admin/User") ? "active" : "")">👤 Пользователи</a>
+                <div class="sidebar-section">Система</div>
+                <a href="/Admin/AuditLog" class="@(path.Contains("AuditLog") ? "active" : "")">📋 Журнал аудита</a>
+                <div class="sidebar-section">Аккаунт</div>
+                <a href="/Profile/Index" class="@(path.Contains("/Profile") ? "active" : "")">👤 Мой профиль</a>
+            }
+        </nav>
+
+        <main class="main">
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success">@TempData["Success"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-error">@TempData["Error"]</div>
+            }
+            @if (TempData["Info"] != null)
+            {
+                <div class="alert alert-info">@TempData["Info"]</div>
+            }
+
+            @RenderBody()
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Живой поиск по таблице
+            document.querySelectorAll('input[data-search]').forEach(input => {
+                const tableId = input.getAttribute('data-search');
+                const table   = document.getElementById(tableId);
+                if (!table) return;
+                input.addEventListener('input', function () {
+                    const q    = this.value.toLowerCase().trim();
+                    const rows = table.querySelectorAll('tbody tr');
+                    let vis    = 0;
+                    rows.forEach(row => {
+                        const show = q === '' || row.textContent.toLowerCase().includes(q);
+                        row.style.display = show ? '' : 'none';
+                        if (show) vis++;
+                    });
+                    let empty = table.querySelector('.search-empty');
+                    if (vis === 0 && q !== '') {
+                        if (!empty) {
+                            empty = document.createElement('tr');
+                            empty.className = 'search-empty';
+                            empty.innerHTML = '<td colspan="99" style="text-align:center;padding:32px;color:#9ca3af;">Ничего не найдено</td>';
+                            table.querySelector('tbody').appendChild(empty);
+                        }
+                    } else if (empty) { empty.remove(); }
+                });
+            });
+
+            // Скрываем уведомления через 5 сек
+            setTimeout(() => {
+                document.querySelectorAll('.alert').forEach(a => {
+                    a.style.transition = 'opacity 0.5s';
+                    a.style.opacity = '0';
+                    setTimeout(() => a.remove(), 500);
+                });
+            }, 5000);
+
+            // Подтверждение удаления
+            document.querySelectorAll('form[data-confirm]').forEach(form => {
+                form.addEventListener('submit', function(e) {
+                    if (!confirm(this.getAttribute('data-confirm'))) e.preventDefault();
+                });
+            });
+        });
+    </script>
+
+    @RenderSection("Scripts", required: false)
+
+</body>
+</html>

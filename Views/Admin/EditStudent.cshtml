@@ -1,0 +1,77 @@
+﻿@{
+    ViewData["Title"] = "Редактировать студента";
+    var m = Model as StudentDiaryWeb.Models.Student;
+    var groups = ViewBag.Groups as List<(int ID, string Name)> ?? new List<(int, string)>();
+    int stid = m?.StudentID ?? 0;
+    string lastName = m?.LastName ?? "";
+    string firstName = m?.FirstName ?? "";
+    string patronymic = m?.Patronymic ?? "";
+    int groupID = m?.GroupID ?? 0;
+    string enrollVal = m?.EnrollmentDate.ToString("yyyy-MM-dd") ?? "";
+    bool isActive = m?.IsActive ?? true;
+}
+
+<div class="page-header">
+    <div class="page-title">🎓 Редактировать студента</div>
+    <a href="/Admin/Students" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/EditStudent">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="StudentID" value="@stid">
+
+        <div class="form-group">
+            <label>Фамилия</label>
+            <input type="text" name="LastName" value="@lastName" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Имя</label>
+            <input type="text" name="FirstName" value="@firstName" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Отчество</label>
+            <input type="text" name="Patronymic" value="@patronymic" maxlength="100">
+        </div>
+        <div class="form-group">
+            <label>Группа</label>
+            <select name="GroupID" required>
+                @foreach (var g in groups)
+                {
+                    if (groupID == g.ID)
+                    {
+                        <option value="@g.ID" selected>@g.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@g.ID">@g.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Дата зачисления</label>
+            <input type="date" name="EnrollmentDate" value="@enrollVal">
+        </div>
+        <div class="form-group">
+            <label>Статус</label>
+            <select name="IsActive">
+                @if (isActive)
+                {
+                    <option value="true" selected>Активен</option>
+                    <option value="false">Отчислен</option>
+                }
+                else
+                {
+                    <option value="true">Активен</option>
+                    <option value="false" selected>Отчислен</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Admin/Students" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

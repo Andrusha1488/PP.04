@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Новый студент";
+    var groups = ViewBag.Groups as List<(int ID, string Name)> ?? new List<(int, string)>();
+    string enrollVal = DateTime.Today.ToString("yyyy-MM-dd");
+}
+
+<div class="page-header">
+    <div class="page-title">🎓 Новый студент</div>
+    <a href="/Admin/Students" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/CreateStudent">
+        @Html.AntiForgeryToken()
+
+        <div class="form-group">
+            <label>Фамилия</label>
+            <input type="text" name="LastName" placeholder="Иванов" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Имя</label>
+            <input type="text" name="FirstName" placeholder="Иван" maxlength="100" required>
+        </div>
+        <div class="form-group">
+            <label>Отчество</label>
+            <input type="text" name="Patronymic" placeholder="Иванович" maxlength="100">
+        </div>
+        <div class="form-group">
+            <label>Группа</label>
+            <select name="GroupID" required>
+                <option value="">— выберите группу —</option>
+                @foreach (var g in groups)
+                {
+                    <option value="@g.ID">@g.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Дата зачисления</label>
+            <input type="date" name="EnrollmentDate" value="@enrollVal">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Добавить студента</button>
+            <a href="/Admin/Students" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>

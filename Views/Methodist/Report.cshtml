@@ -1,0 +1,201 @@
+﻿@{
+    ViewData["Title"] = "Сводный отчёт";
+    var model = Model as StudentDiaryWeb.Models.MethodistDashboard;
+
+    var semesters = ViewBag.Semesters as List<(int ID, string Name)>
+                    ?? new List<(int, string)>();
+    var teachers = ViewBag.Teachers as List<(int ID, string Name)>
+                    ?? new List<(int, string)>();
+    int selSem = ViewBag.SelectedSemester != null ? (int)ViewBag.SelectedSemester : 0;
+    int selTch = ViewBag.SelectedTeacher != null ? (int)ViewBag.SelectedTeacher : 0;
+
+    var notReviewed = model?.NotReviewedThisMonth ?? new List<StudentDiaryWeb.Models.TeacherAssignment>();
+    var behind = model?.BehindSchedule ?? new List<StudentDiaryWeb.Models.TeacherAssignment>();
+
+    // Фильтрация непроверенных
+    if (selTch > 0)
+        notReviewed = notReviewed.Where(a => a.TeacherID == selTch).ToList();
+    if (selSem > 0)
+        notReviewed = notReviewed.Where(a => a.SemesterID == selSem).ToList();
+
+    // Фильтрация отстающих
+    if (selTch > 0)
+        behind = behind.Where(a => a.TeacherID == selTch).ToList();
+    if (selSem > 0)
+        behind = behind.Where(a => a.SemesterID == selSem).ToList();
+}
+
+<div class="page-header">
+    <div class="page-title">📊 Сводный отчёт</div>
+</div>
+
+@* Фильтры *@
+<form method="get" action="/Methodist/Report"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:14px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Семестр</div>
+        <select name="semesterId"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-width:200px;">
+            <option value="">Все семестры</option>
+            @foreach (var s in semesters)
+            {
+                if (selSem == s.ID)
+                {
+                    <option value="@s.ID" selected>@s.Name</option>
+                }
+                else
+                {
+                    <option value="@s.ID">@s.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Преподаватель</div>
+        <select name="teacherId"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-width:180px;">
+            <option value="">Все преподаватели</option>
+            @foreach (var t in teachers)
+            {
+                if (selTch == t.ID)
+                {
+                    <option value="@t.ID" selected>@t.Name</option>
+                }
+                else
+                {
+                    <option value="@t.ID">@t.Name</option>
+                }
+            }
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (selSem > 0 || selTch > 0)
+    {
+        <a href="/Methodist/Report" class="btn btn-secondary">✕ Сбросить</a>
+    }
+</form>
+
+@* Блок: не проверено *@
+<div class="table-card" style="margin-bottom:24px;">
+    <div class="table-header">
+        <div class="table-title" style="color:@(notReviewed.Any() ? "#dc2626" : "#16a34a")">
+            @if (notReviewed.Any())
+            {
+                <span>⚠ Не проверено в этом месяце (@notReviewed.Count)</span>
+            }
+            else
+            {
+
+                <span>✓ Все журналы проверены в этом месяце</span>
+            }
+        </div>
+        @if (notReviewed.Any())
+        {
+            <div class="search-box">
+                <input type="text" placeholder="Поиск…" data-search="notRevTable">
+            </div>
+        }
+    </div>
+    @if (notReviewed.Any())
+    {
+        <table id="notRevTable">
+            <thead>
+                <tr>
+                    <th>Преподаватель</th>
+                    <th>Группа</th>
+                    <th>Предмет</th>
+                    <th>Семестр</th>
+                    <th style="text-align:center;">Часов</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in notReviewed)
+                {
+                    <tr>
+                        <td>@a.TeacherName</td>
+                        <td><strong>@a.GroupName</strong></td>
+                        <td>@a.SubjectName</td>
+                        <td>@a.SemesterName</td>
+                        <td style="text-align:center;">@a.HoursConducted / @a.HoursTotal</td>
+                        <td>
+                            <a href="/Methodist/Journal?assignmentId=@a.AssignmentID"
+                               class="btn btn-primary btn-sm">📓 Открыть и проверить</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div style="padding:20px;text-align:center;color:#16a34a;font-size:14px;">
+            Всё проверено 🎉
+        </div>
+    }
+</div>
+
+@* Блок: отстают от плана *@
+<div class="table-card">
+    <div class="table-header">
+        <div class="table-title" style="color:@(behind.Any() ? "#d97706" : "#16a34a")">
+            @if (behind.Any())
+            {
+                <span>⏱ Отстают от плана более 10% (@behind.Count)</span>
+            }
+            else
+            {
+
+                <span>✓ Все журналы в рамках плана</span>
+            }
+        </div>
+        @if (behind.Any())
+        {
+            <div class="search-box">
+                <input type="text" placeholder="Поиск…" data-search="behindTable">
+            </div>
+        }
+    </div>
+    @if (behind.Any())
+    {
+        <table id="behindTable">
+            <thead>
+                <tr>
+                    <th>Преподаватель</th>
+                    <th>Группа</th>
+                    <th>Предмет</th>
+                    <th>Семестр</th>
+                    <th style="text-align:center;">Часов факт/план</th>
+                    <th style="text-align:center;">%</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in behind.OrderBy(a => a.HoursConducted * 100.0 / (a.HoursTotal > 0 ? a.HoursTotal : 1)))
+                {
+                    int pct = a.HoursTotal > 0
+                    ? (int)Math.Round(a.HoursConducted * 100.0 / a.HoursTotal) : 0;
+                    <tr>
+                        <td>@a.TeacherName</td>
+                        <td><strong>@a.GroupName</strong></td>
+                        <td>@a.SubjectName</td>
+                        <td>@a.SemesterName</td>
+                        <td style="text-align:center;">@a.HoursConducted / @a.HoursTotal</td>
+                        <td style="text-align:center;font-weight:700;color:#dc2626;">@pct%</td>
+                        <td>
+                            <a href="/Methodist/Journal?assignmentId=@a.AssignmentID"
+                               class="btn btn-secondary btn-sm">📓 Открыть</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div style="padding:20px;text-align:center;color:#16a34a;font-size:14px;">
+            Отставаний нет 🎉
+        </div>
+    }
+</div>

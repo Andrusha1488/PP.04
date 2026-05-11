@@ -1,0 +1,143 @@
+﻿@{
+    ViewData["Title"] = "Пользователи";
+    var list = Model as List<StudentDiaryWeb.Models.AppUser>
+                 ?? new List<StudentDiaryWeb.Models.AppUser>();
+    var roles = ViewBag.Roles as List<(int ID, string Name)>
+                 ?? new List<(int, string)>();
+    int selRole = ViewBag.SelectedRole != null ? (int)ViewBag.SelectedRole : 0;
+    string selStatus = ViewBag.SelectedStatus ?? "";
+}
+
+<div class="page-header">
+    <div class="page-title">👤 Пользователи</div>
+    <a href="/Admin/CreateUser" class="btn btn-primary">+ Новый пользователь</a>
+</div>
+
+@* ── Панель фильтров ── *@
+<form method="get" action="/Admin/Users"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Роль</div>
+        <select name="roleId"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            <option value="">Все роли</option>
+            @foreach (var r in roles)
+            {
+                if (selRole == r.ID)
+                {
+                    <option value="@r.ID" selected>@r.Name</option>
+                }
+                else
+                {
+                    <option value="@r.ID">@r.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Статус</div>
+        <select name="status"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;">
+            @if (selStatus == "")
+            {
+                <option value="" selected>Все</option>
+            }
+            else
+            {
+                <option value="">Все</option>
+            }
+
+            @if (selStatus == "active")
+            {
+                <option value="active" selected>Активные</option>
+            }
+            else
+            {
+                <option value="active">Активные</option>
+            }
+
+            @if (selStatus == "blocked")
+            {
+                <option value="blocked" selected>Заблокированные</option>
+            }
+            else
+            {
+                <option value="blocked">Заблокированные</option>
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (selRole > 0 || !string.IsNullOrEmpty(selStatus))
+    {
+        <a href="/Admin/Users" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Найдено: <strong>@list.Count</strong>
+    </div>
+</form>
+
+<div class="table-card">
+    <div class="table-header">
+        <div class="table-title">Пользователи системы</div>
+        <div class="search-box">
+            <input type="text" placeholder="Быстрый поиск…" data-search="usersTable">
+        </div>
+    </div>
+    <table id="usersTable">
+        <thead>
+            <tr><th>Логин</th><th>Роль</th><th>Статус</th><th>Действия</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var u in list)
+            {
+                <tr>
+                    <td><strong>@u.Login</strong></td>
+                    <td>
+                        @{
+                            string bc = u.RoleName == "Администратор" ? "badge-danger"
+                            : u.RoleName == "Методист" ? "badge-warning"
+                            : "badge-info";
+                        }
+                        <span class="badge @bc">@u.RoleName</span>
+                    </td>
+                    <td>
+                        @if (u.IsActive)
+                        {
+                            <span class="badge badge-success">Активен</span>
+                        }
+                        else
+                        {
+
+                            <span class="badge badge-danger">Заблокирован</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="/Admin/ChangeRole?id=@u.UserID" class="btn btn-secondary btn-sm">Роль</a>
+                        <form method="post" action="/Admin/ToggleUser"
+                              data-confirm="@(u.IsActive ? "Заблокировать?" : "Разблокировать?")"
+                              style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@u.UserID">
+                            <button type="submit"
+                                    class="btn @(u.IsActive ? "btn-danger" : "btn-success") btn-sm">
+                                @(u.IsActive ? "Блок." : "Разблок.")
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!list.Any())
+            {
+                <tr>
+                    <td colspan="4" style="text-align:center;padding:32px;color:#9ca3af;">
+                        Пользователей не найдено
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

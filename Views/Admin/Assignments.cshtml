@@ -1,0 +1,141 @@
+﻿@{
+    ViewData["Title"] = "Назначения";
+    var list = Model as List<StudentDiaryWeb.Models.TeacherAssignment>
+                    ?? new List<StudentDiaryWeb.Models.TeacherAssignment>();
+    var semesters = ViewBag.Semesters as List<(int ID, string Name)>
+                    ?? new List<(int, string)>();
+    var teachers = ViewBag.Teachers as List<(int ID, string Name)>
+                    ?? new List<(int, string)>();
+    int selSem = ViewBag.SelectedSemester != null ? (int)ViewBag.SelectedSemester : 0;
+    int selTch = ViewBag.SelectedTeacher != null ? (int)ViewBag.SelectedTeacher : 0;
+}
+
+<div class="page-header">
+    <div class="page-title">🔗 Назначения</div>
+    <a href="/Admin/CreateAssignment" class="btn btn-primary">+ Новое назначение</a>
+</div>
+
+@* ── Панель фильтров ── *@
+<form method="get" action="/Admin/Assignments"
+      style="background:white;border:1px solid #e5e7eb;border-radius:10px;
+             padding:16px 20px;margin-bottom:20px;display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Семестр</div>
+        <select name="semesterId"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-width:200px;">
+            <option value="">Все семестры</option>
+            @foreach (var s in semesters)
+            {
+                if (selSem == s.ID)
+                {
+                    <option value="@s.ID" selected>@s.Name</option>
+                }
+                else
+                {
+                    <option value="@s.ID">@s.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <div>
+        <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">Преподаватель</div>
+        <select name="teacherId"
+                style="padding:8px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:13px;min-width:180px;">
+            <option value="">Все преподаватели</option>
+            @foreach (var t in teachers)
+            {
+                if (selTch == t.ID)
+                {
+                    <option value="@t.ID" selected>@t.Name</option>
+                }
+                else
+                {
+                    <option value="@t.ID">@t.Name</option>
+                }
+            }
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Применить</button>
+    @if (selSem > 0 || selTch > 0)
+    {
+        <a href="/Admin/Assignments" class="btn btn-secondary">✕ Сбросить</a>
+    }
+    <div style="margin-left:auto;font-size:13px;color:#6b7280;align-self:center;">
+        Найдено: <strong>@list.Count</strong>
+    </div>
+</form>
+
+@if (!list.Any())
+{
+    <div class="table-card">
+        <div style="padding:48px;text-align:center;color:#9ca3af;">
+            <div style="font-size:48px;margin-bottom:12px;">🔗</div>
+            <div style="font-size:16px;font-weight:600;margin-bottom:6px;">Назначений не найдено</div>
+            <div style="margin-top:12px;">
+                <a href="/Admin/CreateAssignment" class="btn btn-primary">+ Создать назначение</a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="table-card">
+        <div class="table-header">
+            <div class="table-title">Всего: @list.Count</div>
+            <div class="search-box">
+                <input type="text" placeholder="Быстрый поиск…" data-search="assignsTable">
+            </div>
+        </div>
+        <table id="assignsTable">
+            <thead>
+                <tr>
+                    <th>Преподаватель</th>
+                    <th>Группа</th>
+                    <th>Предмет</th>
+                    <th>Семестр</th>
+                    <th style="text-align:center;">Часов (факт/план)</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var a in list)
+                {
+                    int pct = a.HoursTotal > 0
+                    ? (int)Math.Round(a.HoursConducted * 100.0 / a.HoursTotal) : 0;
+                    string barCol = pct >= 90 ? "#16a34a" : pct >= 60 ? "#2563eb" : "#dc2626";
+                    <tr>
+                        <td>@a.TeacherName</td>
+                        <td><strong>@a.GroupName</strong></td>
+                        <td>@a.SubjectName</td>
+                        <td>@a.SemesterName</td>
+                        <td style="text-align:center;">
+                            @a.HoursConducted / @a.HoursTotal
+                            <div style="background:#f3f4f6;border-radius:4px;height:6px;margin-top:4px;overflow:hidden;">
+                                <div style="width:@(Math.Min(pct, 100))%;background:@barCol;height:100%;border-radius:4px;"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <form method="post" action="/Admin/LockFinalGrades"
+                                  data-confirm="Закрыть сессию? Итоговые оценки будут заблокированы."
+                                  style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="assignmentId" value="@a.AssignmentID">
+                                <button type="submit" class="btn btn-warning btn-sm">🔒 Закрыть сессию</button>
+                            </form>
+                            <form method="post" action="/Admin/DeleteAssignment"
+                                  data-confirm="Удалить назначение? Все занятия и оценки будут удалены."
+                                  style="display:inline;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@a.AssignmentID">
+                                <button type="submit" class="btn btn-danger btn-sm">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

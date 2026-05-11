@@ -1,0 +1,38 @@
+﻿@{
+    ViewData["Title"] = "Редактировать предмет";
+    var m = Model as StudentDiaryWeb.Models.Subject;
+    int subID = m?.SubjectID ?? 0;
+    string subName = m?.SubjectName ?? "";
+    string subDesc = m?.Description ?? "";
+    int subHours = m?.HoursTotal ?? 0;
+}
+
+<div class="page-header">
+    <div class="page-title">📚 Редактировать предмет</div>
+    <a href="/Admin/Subjects" class="btn btn-secondary">← Назад</a>
+</div>
+
+<div class="form-card">
+    <form method="post" action="/Admin/EditSubject">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="SubjectID" value="@subID">
+
+        <div class="form-group">
+            <label>Название предмета</label>
+            <input type="text" name="SubjectName" value="@subName" maxlength="200" required>
+        </div>
+        <div class="form-group">
+            <label>Код / описание</label>
+            <input type="text" name="Description" value="@subDesc" maxlength="500">
+        </div>
+        <div class="form-group">
+            <label>Часов по плану</label>
+            <input type="number" name="HoursTotal" value="@subHours" min="0" max="1000">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">💾 Сохранить</button>
+            <a href="/Admin/Subjects" class="btn btn-secondary">Отмена</a>
+        </div>
+    </form>
+</div>
