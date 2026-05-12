@@ -4,12 +4,19 @@ namespace StudentDiaryWeb.Data
 {
     public static class DatabaseHelper
     {
-        private static readonly string ConnectionString =
-            @"Server=DESKTOP-HPUN3GH\SQLEXPRESS;Database=TeacherJournal;Integrated Security=True;TrustServerCertificate=True;";
+        private static string? _connectionString;
+
+        public static void SetConnectionString(string connectionString)
+        {
+            _connectionString = connectionString;
+        }
 
         public static SqlConnection GetConnection()
         {
-            var connection = new SqlConnection(ConnectionString);
+            if (string.IsNullOrEmpty(_connectionString))
+                throw new Exception("Connection string is not initialized.");
+
+            var connection = new SqlConnection(_connectionString);
             connection.Open();
             return connection;
         }
@@ -21,7 +28,10 @@ namespace StudentDiaryWeb.Data
                 using var conn = GetConnection();
                 return conn.State == System.Data.ConnectionState.Open;
             }
-            catch { return false; }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

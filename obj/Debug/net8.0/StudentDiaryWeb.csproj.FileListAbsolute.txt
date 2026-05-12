@@ -163,3 +163,4 @@ C:\Users\Admin\source\repos\StudentDiaryWeb\StudentDiaryWeb\bin\Debug\net8.0\Bou
 C:\Users\Admin\source\repos\StudentDiaryWeb\StudentDiaryWeb\bin\Debug\net8.0\MailKit.dll
 C:\Users\Admin\source\repos\StudentDiaryWeb\StudentDiaryWeb\bin\Debug\net8.0\MimeKit.dll
 C:\Users\Admin\source\repos\StudentDiaryWeb\StudentDiaryWeb\bin\Debug\net8.0\appsettings.Production.json
+C:\Users\Admin\source\repos\StudentDiaryWeb\StudentDiaryWeb\obj\Debug\net8.0\StudentDiaryWeb.sourcelink.json

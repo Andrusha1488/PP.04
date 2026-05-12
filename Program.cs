@@ -4,6 +4,9 @@ using StudentDiaryWeb.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
+DatabaseHelper.SetConnectionString(
+    builder.Configuration.GetConnectionString("DefaultConnection")!);
+
 // ƒобавл€ем MVC (контроллеры + представлени€)
 builder.Services.AddControllersWithViews();
 
